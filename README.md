@@ -1,7 +1,7 @@
-# The Source Code for LSH-APG (Submitted to SIGMOD 2023 Second Round)
+# The Source Code for LSH-APG (Submitted to PVLDB 2023)
 -----------------------------------------------------------------------------------------------------------------
 ## Introduction
-This is a source code for the algorithm described in the paper **LSH-APG: Building Approximate Proximity Graphs Through Locality-Sensitive Hashing(Submitted to SIGMOD 2023 Second Round)**. We call it as **LG** project.
+This is a source code for the algorithm described in the paper **Towards Efficient Index Construction and Approximate Nearest Neighbor Search in High-Dimensional Spaces (Submitted to PVLDB 2023)**. We call it as **LG** project.
 
 ## Compilation
 
