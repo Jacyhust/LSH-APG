@@ -65,5 +65,5 @@ struct tPoints {
 
 constexpr int _sspace = 8;
 constexpr int _lspace = 12;
-
+extern int _lsh_UB;
 //#define DIV

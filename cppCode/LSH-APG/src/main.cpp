@@ -3,7 +3,7 @@
 //
 
 #include "alg.h"
-
+int _lsh_UB=0;
 //double _chi2inv;
 //double _chi2invSqr;
 //double _coeff;
@@ -23,8 +23,8 @@ int main(int argc, char const* argv[])
 	K = 18;
 	double pC = 0.95, pQ = 0.9;
 	std::string datasetName;
-	bool isbuilt = 1;
-
+	bool isbuilt = 0;
+	_lsh_UB=0;
 	if (argc > 1) datasetName = argv[1];
 	if (argc > 2) isbuilt = std::atoi(argv[2]);
 	if (argc > 3) k = std::atoi(argv[3]);
@@ -34,17 +34,17 @@ int main(int argc, char const* argv[])
 	if (argc > 7) efC = std::atoi(argv[7]);
 	if (argc > 8) pC = std::atof(argv[8]);
 	if (argc > 9) pQ = std::atof(argv[9]);
-
+	if (argc > 10) _lsh_UB = std::atoi(argv[10]);
 	if (argc == 1) {
-		const std::string datas[] = { "audio2","mnist","cifar","NUS","Trevi","gist","deep1m","skew_10M_8d","gauss_8d","gauss_25w_128" };
-		datasetName = datas[5];
-		datasetName = "sift1B"; 
+		const std::string datas[] = { "audio","mnist","cifar","NUS","Trevi","gist","deep1m","skew_10M_8d","gauss_8d","gauss_25w_128" };
+		datasetName = datas[6];
+		//datasetName = "sift1B"; 
 		setW(datasetName, W);
 		std::cout << "Using the default configuration!\n\n";
 	}
 
 	#if defined(unix) || defined(__unix__)
-		std::string data_fold = "./../../dataset/", index_fold = "./indexes/";
+		std::string data_fold = "/home/xizhao/dataset/", index_fold = "./indexes/";
 	#else
 		std::string data_fold = "E:/Dataset_for_c/", index_fold = data_fold + "graphIndex/";
 	#endif
@@ -57,7 +57,10 @@ int main(int argc, char const* argv[])
 	std::cout << "L=        " << L << std::endl;
 	std::cout << "K=        " << K << std::endl;
 	std::cout << "T=        " << T << std::endl;
+	std::cout << "lsh_UB=   " << _lsh_UB << std::endl;
 	Preprocess prep(data_fold + datasetName + ".data", data_fold + "ANN/" + datasetName + ".bench_graph");
+
+	//return 0;
 
 	showMemoryInfo();
 
@@ -82,8 +85,8 @@ int main(int argc, char const* argv[])
 	//divG->traverse();
 	//return 0;
 
-	//std::cout << "Loading FastGraph...\n";
-	//fastGraph* fsG = new fastGraph(divG);
+	std::cout << "Loading FastGraph...\n";
+	fastGraph* fsG = new fastGraph(divG);
 
 	std::stringstream ss;
 	ss  << "*******************************************************************************************************\n"
@@ -96,8 +99,12 @@ int main(int argc, char const* argv[])
 		<< std::setw(_sspace) << "ef"
 		<< std::setw(_lspace) << "Time"
 		<< std::setw(_lspace) << "Recall"
-		<< std::setw(_lspace) << "CPQ"
+		//<< std::setw(_lspace) << "Ratio"
+		<< std::setw(_lspace) << "Cost"
+		<< std::setw(_lspace) << "CPQ1"
+		<< std::setw(_lspace) << "CPQ2"
 		<< std::setw(_lspace) << "Pruning"
+		//<< std::setw(_lspace) << "MaxHop"
 		<< std::endl
 		<< std::endl;
 
@@ -135,11 +142,11 @@ int main(int argc, char const* argv[])
 	//}
 #endif // _DEBUG
 	if (k == 50) {
-		for (auto& ef : efs) {
-			if (divG) divG->ef = ef;
-			graphSearch(c, k, divG, prep, beta, datasetName, data_fold, 2);
-		}
-		std::cout << std::endl;
+		// for (auto& ef : efs) {
+		// 	if (divG) divG->ef = ef;
+		// 	graphSearch(c, k, divG, prep, beta, datasetName, data_fold, 2);
+		// }
+		// std::cout << std::endl;
 	}
 	else {
 		std::vector<int> ks = { 1,10,20,30,40,50,60,70,80,90,100 };
@@ -165,13 +172,21 @@ int main(int argc, char const* argv[])
 	//	graphSearch(c, k, divG, prep, beta, datasetName, data_fold, 3);
 	//}
 	//std::cout << std::endl;
+	efs={200};
+	for (auto& ef : efs) {
+		if (fsG) fsG->ef = ef;
+		graphSearch(c, k, fsG, prep, beta, datasetName, data_fold, 0);
+	}
+
+	std::vector<float> pts={0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95};
+
+	std::cout << std::endl;
 
 	//for (auto& ef : efs) {
 	//	if (fsG) fsG->ef = ef;
-	//	graphSearch(c, k, fsG, prep, beta, datasetName, data_fold, 0);
+	//	graphSearch(c, k, fsG, prep, beta, datasetName, data_fold, 1);
 	//}
-	std::cout << std::endl;
-
+	//std::cout << std::endl;
 
 	time_t now = time(0);
 	

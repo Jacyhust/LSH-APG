@@ -53,10 +53,10 @@ void graphSearch(float c, int k, Graph* myGraph, Preprocess& prep, float beta, s
 	std::string algName, qt;
 	switch (qType/2) {
 	case 0:
-		algName = "lshGraph";
+		algName = "fastG";
 		break;
 	case 1:
-		algName = "LSH-APG";
+		algName = "divGraph";
 		break;
 	}
 
@@ -70,7 +70,9 @@ void graphSearch(float c, int k, Graph* myGraph, Preprocess& prep, float beta, s
 	}
 	float mean_time = (float)perform.timeTotal / perform.num;
 	float cost = ((float)perform.cost) / ((float)perform.num);
-	float cost_total = myGraph->S + cost* (((float)myGraph->lowDim) / myGraph->dim) + cost;
+	float ratio = ((float)perform.prunings) / (perform.cost);
+	float cost_total = myGraph->S + cost / (1 - ratio) * (((float)myGraph->lowDim) / myGraph->dim) + cost;
+	float cpq = myGraph->L * myGraph->K+_lsh_UB+cost / (1 - ratio) * (((float)myGraph->lowDim) / myGraph->dim);
 
 	std::stringstream ss;
 	ss << std::setw(_lspace) << algName
@@ -78,8 +80,12 @@ void graphSearch(float c, int k, Graph* myGraph, Preprocess& prep, float beta, s
 		<< std::setw(_sspace) << myGraph->ef
 		<< std::setw(_lspace) << mean_time * 1000
 		<< std::setw(_lspace) << ((float)perform.NN_num) / (perform.num * k)
+		//<< std::setw(_lspace) << ((float)perform.ratio) / (perform.resNum)
+		<< std::setw(_lspace) << ((float)perform.cost) / ((float)perform.num)// * prep.data.N)
+		<< std::setw(_lspace) << cpq
 		<< std::setw(_lspace) << cost_total
 		<< std::setw(_lspace) << ((float)perform.prunings) / (perform.cost)
+		//<< std::setw(_lspace) << ((float)perform.maxHop) / (perform.num)
 		<< std::endl;
 
 	time_t now = time(0);

@@ -151,7 +151,7 @@ class zlsh :public hashBase
 private:
 	std::string index_file;
 	
-protected:
+public:
 	int u = 0;//u bits per hash value
 	// Index structure: RB-Tree
 

@@ -9,12 +9,13 @@
 #include <vector>
 #include <ctime>
 #include <chrono>
+#include <unordered_set>
 #include <set>
 #include <map>
 #include <algorithm>
 //#include "space_l2.h"
 #include "fastL2_ip.h"
-
+#include "distances_simd_avx512.h"
 #include <mutex>
 
 #if defined(__GNUC__)
@@ -31,6 +32,9 @@ inline int fopen_s(FILE** pFile, const char* path, const char* mode)
 #elif defined _MSC_VER
 #else
 #endif
+
+//#define __USE__AVX2__ZX__ 1
+
 namespace lsh
 {
 	class progress_display
@@ -163,7 +167,11 @@ struct Res//the result of knns
 
 inline float cal_inner_product(float* v1, float* v2, int dim)
 {
+#if (defined __AVX2__ && defined __USE__AVX2__ZX__)
+	return faiss::fvec_inner_product_avx512(v1, v2, dim);
+#else
 	return calIp_fast(v1, v2, dim);
+#endif
 }
 
 inline float cal_lengthSquare(float* v1, int dim)
@@ -178,16 +186,29 @@ inline float cal_lengthSquare(float* v1, int dim)
 inline float cal_dist(float* v1, float* v2, int dim)
 {
 #ifdef USE_SQRDIST
-	return calL2Sqr_fast(v1, v2, dim);
+	#if (defined __AVX2__ && defined __USE__AVX2__ZX__)
+		return faiss::fvec_L2sqr_avx512(v1, v2, dim);
+	#else
+		return calL2Sqr_fast(v1, v2, dim);
+	#endif
 #else
-	return sqrt(calL2Sqr_fast(v1, v2, dim));
+	#if (defined __AVX2__ && defined __USE__AVX2__ZX__)
+		return sqrt(faiss::fvec_L2sqr_avx512(v1, v2, dim));
+	#else
+		return sqrt(calL2Sqr_fast(v1, v2, dim));
+	#endif
 #endif
 	
 }
 
 inline float cal_distSqrt(float* v1, float* v2, int dim)
 {
+#if (defined __AVX2__ && defined __USE__AVX2__ZX__)
+	return sqrt(faiss::fvec_L2sqr_avx512(v1, v2, dim));
+#else
 	return sqrt(calL2Sqr_fast(v1, v2, dim));
+#endif
+	//return sqrt(calL2Sqr_fast(v1, v2, dim));
 	
 }
 
@@ -253,6 +274,8 @@ int isUnique(std::map<U, T>& vec) {
 
 #include <mutex>
 #include <deque>
+#include <set>
+
 namespace threadPoollib
 {
 	typedef unsigned short int vl_type;
@@ -260,24 +283,27 @@ namespace threadPoollib
 	class VisitedList {
 	public:
 		vl_type curV;
-		vl_type* mass;
+		//vl_type* mass;
+		std::unordered_set<int> mass;
 		unsigned int numelements;
 
 		VisitedList(int numelements1) {
 			curV = -1;
 			numelements = numelements1;
-			mass = new vl_type[numelements];
+			//mass = new vl_type[numelements];
 		}
 
 		void reset() {
 			curV++;
 			if (curV == 0) {
-				memset(mass, 0, sizeof(vl_type) * numelements);
+				//memset(mass, 0, sizeof(vl_type) * numelements);
 				curV++;
 			}
 		};
 
-		~VisitedList() { delete[] mass; }
+		~VisitedList() { 
+			//delete[] mass; 
+		}
 	};
 	///////////////////////////////////////////////////////////
 	//

@@ -169,12 +169,13 @@ public:
 	//void knn(queryN* q);
 	void knnHNSW(queryN* q);
 	void insertHNSW(int pId);
-	int searchLSH(int pId, std::vector<zint>& keys, std::priority_queue<Res>& candTable, threadPoollib::vl_type* checkedArrs_local, threadPoollib::vl_type tag);
+	//int searchLSH(int pId, std::vector<zint>& keys, std::priority_queue<Res>& candTable, threadPoollib::vl_type* checkedArrs_local, threadPoollib::vl_type tag);
+	int searchLSH(int pId, std::vector<zint>& keys, std::priority_queue<Res>& candTable, std::unordered_set<int>& checkedArrs_local, threadPoollib::vl_type tag);
 	//int searchLSH(std::vector<zint>& keys, std::priority_queue<Res>& candTable, threadPoollib::vl_type* checkedArrs_local, threadPoollib::vl_type tag);
 	//int searchLSH(std::vector<zint>& keys, std::priority_queue<Res>& candTable);
 	void insertLSHRefine(int pId);
 	//int searchInBuilding(int pId, int ep, Res* arr, int& size_res);
-	int searchInBuilding(int p, std::priority_queue<Res, std::vector<Res>, std::greater<Res>>& eps, Res* arr, int& size_res, threadPoollib::vl_type* checkedArrs_local, threadPoollib::vl_type tag);
+	int searchInBuilding(int p, std::priority_queue<Res, std::vector<Res>, std::greater<Res>>& eps, Res* arr, int& size_res, std::unordered_set<int>& checkedArrs_local, threadPoollib::vl_type tag);
 	void chooseNN_simple(Res* arr, int& size_res);
 	void chooseNN_div(Res* arr, int& size_res);
 	void chooseNN(Res* arr, int& size_res);
@@ -357,49 +358,7 @@ divGraph::divGraph(Preprocess* prep, const std::string& path, double probQ):link
 	showInfo(prep);
 }
 
-void divGraph::insertHNSW(int pId)
-{
-	std::vector<zint> keys(L);
-	for (int j = 0; j < L; j++) {
-		write_lock lock_h(hash_locks_[j]);
-		keys[j] = getZ(hashval[pId] + j * K);
-		hashTables[j].insert({ keys[j],pId });
-	}
-	if (pId == 0) return;
-	Res res_pair;
-
-	threadPoollib::VisitedList* vl = visited_list_pool_->getFreeVisitedList();
-	threadPoollib::vl_type* checkedArrs_local = vl->mass;
-	threadPoollib::vl_type tag = vl->curV;
-	write_lock lock(link_list_locks_[pId]);
-	
-	int ep = 0;
-	std::priority_queue<Res, std::vector<Res>, std::greater<Res>> eps;
-	checkedArrs_local[ep] = tag;
-	float dist = cal_dist(myData[pId], myData[ep], dim);
-	//float lowerBound = dist;
-	eps.emplace(dist, ep);
-	linkLists[pId]->insert(dist, ep);//linkLists[pId]->insert(dist, ep);
-	compCostConstruction++;
-	compCostConstruction += searchInBuilding(pId, eps, linkLists[pId]->neighbors, linkLists[pId]->out, checkedArrs_local, tag);
-
-	//while (linkLists[pId]->size() > T) linkLists[pId]->erase();
-	chooseNN(linkLists[pId]->neighbors, linkLists[pId]->out);
-
-	for (int pos = 0; pos < linkLists[pId]->size(); ++pos) {
-		auto& x = linkLists[pId]->getNeighbor(pos);
-		int& qId = x.id;
-		float& dist = x.dist;
-
-		write_lock lock_q(link_list_locks_[qId]);
-		chooseNN(linkLists[qId]->neighbors, linkLists[qId]->out, Res(pId, dist));
-	}
-
-	visited_list_pool_->releaseVisitedList(vl);
-	
-}
-
-int  divGraph::searchLSH(int pId, std::vector<zint>& keys, std::priority_queue<Res>& candTable, threadPoollib::vl_type* checkedArrs_local, threadPoollib::vl_type tag)
+int  divGraph::searchLSH(int pId, std::vector<zint>& keys, std::priority_queue<Res>& candTable, std::unordered_set<int>& checkedArrs_local, threadPoollib::vl_type tag)
 {
 	read_lock lock_hr(hash_lock);
 	std::vector<read_lock> lock_hs;
@@ -455,10 +414,11 @@ int  divGraph::searchLSH(int pId, std::vector<zint>& keys, std::priority_queue<R
 			for (int i = 0; i < step; ++i) {
 				++numAccess[t.id];
 				res_pair.id = lpos[t.id]->second;
-				if (checkedArrs_local[res_pair.id] != tag) {
+				if (checkedArrs_local.find(res_pair.id)==checkedArrs_local.end()) {
 					res_pair.dist = cal_dist(myData[pId], myData[res_pair.id], dim);
 					candTable.push(res_pair);
-					checkedArrs_local[res_pair.id] = tag;
+					//checkedArrs_local[res_pair.id] = tag;
+					checkedArrs_local.emplace(res_pair.id);
 				}
 
 				if (lpos[t.id] != hashTables[t.id].begin()) {
@@ -485,11 +445,11 @@ int  divGraph::searchLSH(int pId, std::vector<zint>& keys, std::priority_queue<R
 			for (int i = 0; i < step; ++i) {
 				++numAccess[t.id];
 				res_pair.id = rpos[t.id]->second;
-				if (checkedArrs_local[res_pair.id] != tag)
-				{
+				if (checkedArrs_local.find(res_pair.id)==checkedArrs_local.end()) {
 					res_pair.dist = cal_dist(myData[pId], myData[res_pair.id], dim);
 					candTable.push(res_pair);
-					checkedArrs_local[res_pair.id] = tag;
+					//checkedArrs_local[res_pair.id] = tag;
+					checkedArrs_local.emplace(res_pair.id);
 				}
 				if (++rpos[t.id] == hashTables[t.id].end()) {
 					break;
@@ -515,7 +475,8 @@ void divGraph::insertLSHRefine(int pId)
 	std::priority_queue<Res> candTable;
 	std::vector<zint> keys(L);
 	threadPoollib::VisitedList* vl = visited_list_pool_->getFreeVisitedList();
-	threadPoollib::vl_type* checkedArrs_local = vl->mass;
+	auto checkedArrs_local = vl->mass;
+	//checkedArrs_local.reserve(N);
 	threadPoollib::vl_type tag = vl->curV;
 	for (int j = 0; j < L; j++) {
 		keys[j] = getZ(hashval[pId] + j * K);
@@ -526,7 +487,8 @@ void divGraph::insertLSHRefine(int pId)
 
 	if (pId != first_id && candTable.empty()) {
 		candTable.emplace(first_id, cal_dist(myData[pId], myData[first_id], dim));
-		checkedArrs_local[first_id] = tag;
+		//checkedArrs_local[first_id] = tag;
+		checkedArrs_local.emplace(first_id);
 	}
 
 	write_lock lock(link_list_locks_[pId]);
@@ -566,7 +528,7 @@ void divGraph::insertLSHRefine(int pId)
 }
 
 int divGraph::searchInBuilding(int p, std::priority_queue<Res, std::vector<Res>, std::greater<Res>>& eps, Res* arr, int& size_res,
-				threadPoollib::vl_type* checkedArrs_local, threadPoollib::vl_type tag)
+	std::unordered_set<int>& checkedArrs_local, threadPoollib::vl_type tag)
 {
 	//size_res = 0;
 	Res res_pair;
@@ -578,8 +540,9 @@ int divGraph::searchInBuilding(int p, std::priority_queue<Res, std::vector<Res>,
 		eps.pop();
 		for (int pos = 0; pos < linkLists[u.id]->size(); ++pos) {
 			res_pair.id = (*(linkLists[u.id]))[pos];
-			if (checkedArrs_local[res_pair.id] != tag) {
-				checkedArrs_local[res_pair.id] = tag;
+			if (checkedArrs_local.find(res_pair.id)==checkedArrs_local.end()) {
+				//checkedArrs_local[res_pair.id] = tag;
+				checkedArrs_local.emplace(res_pair.id);
 				if (0 || arr[0].dist> cal_dist(hashval[p], hashval[res_pair.id], lowDim) * coeff) {
 					res_pair.dist = cal_dist(myData[p], myData[res_pair.id], dim);
 					++cost;
@@ -825,7 +788,7 @@ void divGraph::oneByOneInsert()
 	first_id = idx[0];
 	insertLSHRefine(idx[0]);//Ensure there is at least one point in the graph before parallelizing
 	lsh::progress_display pd(N - 1);
-#pragma omp parallel for num_threads(64)
+#pragma omp parallel for
 	for (int i = 1; i < N; i++) {
 		insertLSHRefine(idx[i]);
 		++pd;
@@ -948,155 +911,7 @@ inline uint64_t divGraph::getKey(int u, int v)
 	}
 }
 
-void divGraph::buildChunks()
-{
-	minTopResHeap pqEdges(N);
-	getIndexes();
-	step = 2 * sqrt(N);
-	int max_degree = 3;
-	int mC = 20;
-	int npart = N / step;
-	linkLists.resize(N, nullptr);
-	int unitL = 2 * max_degree * L;
-
-	linkListBase.resize(N * unitL);
-	for (int i = 0; i < N; ++i) {
-		linkLists[i] = new Node2(i, (Res*)(&(linkListBase[i * unitL])));
-	}
-
-
-	lsh::progress_display pd(L * N);
-	
-	for (int i = 0; i < L; ++i) {
-		auto& hashTable = hashTables[i];
-		int left = 0, right = step;
-		auto pos = hashTable.begin();
-		int* idx = new int[N];
-		for (int j = 0; j < N; ++j) {
-			idx[j] = pos->second;
-			++pos;
-		}
-		
-		std::vector<int> cutPoints(npart + 1);
-		for (int j = 0; j < npart; ++j) {
-			cutPoints[j] = j * step;
-		}
-		cutPoints[npart] = N;
-		std::vector<std::vector<Res>> partEdges(N);
-#pragma omp parallel for
-		for (int j = 0; j < npart; ++j) {
-			int begin = cutPoints[j];
-			int end = cutPoints[j + 1];
-			for (int l = begin + 1; l < end; ++l) {
-				insertPart(idx[l], idx[l - 1], max_degree, mC, partEdges);
-				//++pd;
-			}
-			pd += end - begin;
-			for (int l = begin; l < end; ++l) {
-				int id = idx[l];
-				const auto& nns = linkLists[id]->neighbors;
-				auto& size = linkLists[id]->out;
-				for (auto& x : partEdges[id])
-					nns[size++] = x;
-			}
-		}
-		delete[] idx;
-
-		//for (int j = 0; j < N; ++j) {
-		//	const auto& nns = linkLists[j]->neighbors;
-		//	auto& size = linkLists[j]->out;
-		//	std::sort(nns, nns + size);
-		//	size = std::unique(nns, nns + size) - nns;
-		//}
-	}
-	
-
-	for (int j = 0; j < N; ++j) {
-		const auto& nns = linkLists[j]->neighbors;
-		auto& size = linkLists[j]->out;
-		std::sort(nns, nns + size);
-		size = std::unique(nns, nns + size) - nns;
-
-		if (size > maxT) size = maxT;
-
-		//std::make_heap(nns, nns + size);
-		//chooseNN_simple(nns, size);
-
-		//chooseNN_div(nns, size);
-		//if (size < T) size = T;
-	}
-}
-
-void divGraph::insertPart(int pId, int ep, int mT, int mC, std::vector<std::vector<Res>>& partEdges)
-{
-	threadPoollib::VisitedList* vl = visited_list_pool_->getFreeVisitedList();
-	threadPoollib::vl_type* checkedArrs_local = vl->mass;
-	threadPoollib::vl_type tag = vl->curV;
-	//write_lock lock(link_list_locks_[pId]);
-
-	std::priority_queue<Res, std::vector<Res>, std::greater<Res>> eps;
-	checkedArrs_local[ep] = tag;
-	float dist = cal_dist(myData[pId], myData[ep], dim);
-	eps.emplace(dist, ep);
-	partEdges[pId].emplace_back(dist, ep);//linkLists[pId]->insert(dist, ep);
-	compCostConstruction++;
-
-	int cost = 0;
-	while (!eps.empty()) {
-		Res u = eps.top();
-		//read_lock lock_e(link_list_locks_[u.id]);
-		if (u > partEdges[pId][0]) break;
-		eps.pop();
-		for (int pos = 0; pos < partEdges[u.id].size(); ++pos) {
-			Res res_pair = partEdges[u.id][pos];
-			if (checkedArrs_local[res_pair.id] != tag) {
-				checkedArrs_local[res_pair.id] = tag;
-				if (1 || partEdges[pId][0].dist > cal_dist(hashval[pId], hashval[res_pair.id], lowDim) * coeff) {
-					res_pair.dist = cal_dist(myData[pId], myData[res_pair.id], dim);
-					++cost;
-					if (partEdges[pId][0] > res_pair || partEdges[pId].size() < mC) {
-						partEdges[pId].emplace_back(res_pair);
-						std::push_heap(partEdges[pId].begin(), partEdges[pId].end());
-						if (partEdges[pId].size() >= mC) {
-							std::pop_heap(partEdges[pId].begin(), partEdges[pId].end());
-							partEdges[pId].pop_back();
-						}
-						eps.emplace(res_pair);
-					}
-				}
-				else {
-					++pruningConstruction;
-				}
-
-			}
-		}
-	}
-
-	compCostConstruction += cost;
-
-	while (partEdges[pId].size() > mT) {
-		std::pop_heap(partEdges[pId].begin(), partEdges[pId].end());
-		partEdges[pId].pop_back();
-	}
-
-	for (int pos = 0; pos < partEdges[pId].size(); ++pos) {
-		auto& x = partEdges[pId][pos];
-		int& qId = x.id;
-		float& dist = x.dist;
-		if (partEdges[qId].size() < 2 * mT) {
-			partEdges[qId].emplace_back(pId, dist);
-			std::push_heap(partEdges[qId].begin(), partEdges[qId].end());
-		}
-		else if (partEdges[qId][0].dist>dist) {
-			std::pop_heap(partEdges[qId].begin(), partEdges[qId].end());
-			partEdges[qId].pop_back();
-			partEdges[qId].emplace_back(pId, dist);
-			std::push_heap(partEdges[qId].begin(), partEdges[qId].end());
-		}
-	}
-
-	visited_list_pool_->releaseVisitedList(vl);
-}
+extern int _lsh_UB;
 
 void divGraph::knn(queryN* q)
 {
@@ -1114,7 +929,7 @@ void divGraph::knn(queryN* q)
 	int lshUB = N / 200;
 	lshUB = 4 * L * log(N);
 	int step = 1;
-
+	if(_lsh_UB>0) lshUB=_lsh_UB;
 	std::vector<int> numAccess(L);
 	std::vector<std::multimap<zint, int>::iterator> lpos(L), rpos(L), qpos(L);
 	std::priority_queue<posInfo> lEntries, rEntries;
