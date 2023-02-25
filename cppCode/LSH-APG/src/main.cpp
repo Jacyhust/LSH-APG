@@ -44,7 +44,7 @@ int main(int argc, char const* argv[])
 	}
 
 	#if defined(unix) || defined(__unix__)
-		std::string data_fold = "/home/xizhao/dataset/", index_fold = "./indexes/";
+		std::string data_fold = "../../dataset/", index_fold = "./indexes/";
 	#else
 		std::string data_fold = "E:/Dataset_for_c/", index_fold = data_fold + "graphIndex/";
 	#endif
