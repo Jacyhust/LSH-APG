@@ -1,4 +1,4 @@
-# The Technical Report for LSH-APG (Submitted to PVLDB 2023)
+# The Technical Report for LSH-APG (PVLDB 2023)
 -----------------------------------------------------------------------------------------------------------------
 ### Last update in Feb 24.
 
