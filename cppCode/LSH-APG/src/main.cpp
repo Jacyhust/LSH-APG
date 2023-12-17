@@ -37,7 +37,7 @@ int main(int argc, char const* argv[])
 	if (argc > 10) _lsh_UB = std::atoi(argv[10]);
 	if (argc == 1) {
 		const std::string datas[] = { "audio","mnist","cifar","NUS","Trevi","gist","deep1m","skew_10M_8d","gauss_8d","gauss_25w_128" };
-		datasetName = datas[6];
+		datasetName = datas[0];
 		//datasetName = "sift1B"; 
 		setW(datasetName, W);
 		std::cout << "Using the default configuration!\n\n";
