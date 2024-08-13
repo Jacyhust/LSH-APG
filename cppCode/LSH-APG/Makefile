@@ -16,7 +16,6 @@ lg:$(SRCS)
 
 clean:
 	rm -rf lgo lg
-	rm -rf $(wildcard *.txt)
 
 cleancodes:
 	rm -rf $(wildcard *.cpp) $(wildcard *.h) $(wildcard ./src/*.cpp) $(wildcard ./src/*.h)

@@ -10,6 +10,12 @@ int _lsh_UB=0;
 
 int main(int argc, char const* argv[])
 {
+
+#if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L) && (_MSC_VER >= 1913))
+	std::cout<<"C++17!\n";
+#else
+#endif // _HAS_CXX17
+
 	float c = 1.5;
 	unsigned k = 50;
 	unsigned L = 8, K = 10;//NUS
@@ -44,7 +50,11 @@ int main(int argc, char const* argv[])
 	}
 
 	#if defined(unix) || defined(__unix__)
+<<<<<<< HEAD
 		std::string data_fold = "../../dataset/", index_fold = "./indexes/";
+=======
+		std::string data_fold = "/home/xizhao/dataset/", index_fold = "./indexes/";
+>>>>>>> master
 	#else
 		std::string data_fold = "E:/Dataset_for_c/", index_fold = data_fold + "graphIndex/";
 	#endif
