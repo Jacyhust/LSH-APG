@@ -20,25 +20,6 @@ hashBase::hashBase(Preprocess& prep_, Parameter& param_,
 	K = param_.K;
 	S = L * K;
 	W = param_.W;
-
-	//std::cout << std::endl << "START HASHING..." << std::endl << std::endl;
-	//lsh::timer timer;
-
-	//std::cout << "SETTING HASH PARAMETER..." << std::endl;
-	//timer.restart();
-	//setHash();
-	//std::cout << "SETTING TIME: " << timer.elapsed() << "s." << std::endl << std::endl;
-
-	//std::cout << "COMPUTING HASH..." << std::endl;
-	//timer.restart();
-	//getHash(prep_);
-	//std::cout << "COMPUTING TIME: " << timer.elapsed() << "s." << std::endl << std::endl;
-
-	//std::cout << "BUILDING INDEX..." << std::endl;
-	//std::cout << "THERE ARE " << L << " " << K << "-D HASH TABLES." << std::endl;
-	//timer.restart();
-	//getIndexes(prep_);
-	//std::cout << "BUILDING TIME: " << timer.elapsed() << "s." << std::endl << std::endl;
 }
 
 hashBase::hashBase()

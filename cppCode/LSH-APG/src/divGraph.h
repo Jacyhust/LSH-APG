@@ -198,11 +198,6 @@ public:
 #include <stdio.h>
 #include <fstream>
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> master
 divGraph::divGraph(Preprocess& prep_, Parameter& param_, const std::string& file_, int T_, int efC_, double probC,double probQ) :zlsh(prep_, param_, ""), link_list_locks_(prep_.data.N)
 {
 	myData = prep_.data.val;
@@ -791,13 +786,6 @@ void divGraph::oneByOneInsert()
 	first_id = idx[0];
 	insertLSHRefine(idx[0]);//Ensure there is at least one point in the graph before parallelizing
 	lsh::progress_display pd(N - 1);
-<<<<<<< HEAD
-#pragma omp parallel for
-	for (int i = 1; i < N; i++) {
-		insertLSHRefine(idx[i]);
-		++pd;
-	}
-=======
 
 	// Add data to index
     ParallelFor(1, N, 96, [&](size_t i, size_t threadId) {
@@ -810,7 +798,6 @@ void divGraph::oneByOneInsert()
 // 		insertLSHRefine(idx[i]);
 // 		++pd;
 // 	}
->>>>>>> master
 	//std::cout << "count: " << pd.count() << std::endl;
 
 //#pragma omp parallel for
