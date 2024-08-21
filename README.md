@@ -53,3 +53,24 @@ A sample dataset `audio.data_new` has been put in the directory `./dataset`.
 Also, you can get it, `audio.data`, from [here](http://www.cs.princeton.edu/cass/audio.tar.gz)(if so, rename it as `audio.data_new`). If the link is invalid, you can also get it from [data](https://github.com/RSIA-LIESMARS-WHU/LSHBOX-sample-data).
 
 For the datasets we use, you can get the raw data from following links: [MNIST](http://yann.lecun.com/exdb/mnist/index.html), [Deep1M](https://www.cse.cuhk.edu.hk/systems/hash/gqr/dataset/deep1M.tar.gz), [GIST](http://corpus-texmex.irisa.fr/), [TinyImages80M](https://hyper.ai/tracker/download?torrent=6552), [SIFT](http://corpus-texmex.irisa.fr/). Next, you should transform your raw dataset into the mentioned binary format, then rename it is `[datasetName].data_new` and put it in the directory `./dataset`.
+
+## Reference
+
+Please use the following bibtex to cite this work when you use **LSH-APG** in your paper.
+
+```tex
+@article{DBLP:journals/pvldb/ZhaoTHZZ23,
+  author       = {Xi Zhao and
+                  Yao Tian and
+                  Kai Huang and
+                  Bolong Zheng and
+                  Xiaofang Zhou},
+  title        = {Towards Efficient Index Construction and Approximate Nearest Neighbor
+                  Search in High-Dimensional Spaces},
+  journal      = {Proc. {VLDB} Endow.},
+  volume       = {16},
+  number       = {8},
+  pages        = {1979--1991},
+  year         = {2023}
+}
+```
